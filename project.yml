@@ -3,12 +3,12 @@ options:
   bundleIdPrefix: com.jaredhilton
 settings:
   base:
-    SWIFT_VERSION: 5.9
+    SWIFT_VERSION: 6.0
 targets:
   GrossUp:
     type: application
     platform: iOS
-    deploymentTarget: "17.0"
+    deploymentTarget: "26.0"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jaredhilton.GrossUp
@@ -17,6 +17,10 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: S863LZ43ZG
     sources:
       - GrossUpApp.swift
       - GrossUpView.swift
@@ -24,7 +28,7 @@ targets:
   GrossUpTests:
     type: bundle.unit-test
     platform: iOS
-    deploymentTarget: "17.0"
+    deploymentTarget: "26.0"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.jaredhilton.GrossUpTests

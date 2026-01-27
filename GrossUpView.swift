@@ -22,7 +22,7 @@ private func formatCurrencyFromDigits(_ digits: String) -> String {
     return currencyInputFormatter.string(from: NSNumber(value: cents / 100)) ?? ""
 }
 
-// MARK: - Adaptive Theme Colors
+// MARK: - Theme Colors (simplified for Liquid Glass)
 struct AppTheme {
     let colorScheme: ColorScheme
     
@@ -71,77 +71,9 @@ struct AppTheme {
         colorScheme == .dark ? .white.opacity(0.4) : Color(red: 0.7, green: 0.7, blue: 0.75)
     }
     
-    // Glass card background
-    var glassBackground: Material {
-        colorScheme == .dark ? .ultraThinMaterial : .regularMaterial
-    }
-    
-    var glassBackgroundOpacity: Double {
-        colorScheme == .dark ? 0.5 : 0.8
-    }
-    
-    // Glass card stroke
-    var glassStroke: Color {
-        colorScheme == .dark ? .white.opacity(0.15) : .white.opacity(0.6)
-    }
-    
-    // Glass card shadow
-    var glassShadowColor: Color {
-        colorScheme == .dark ? .black.opacity(0.3) : .black.opacity(0.08)
-    }
-    
-    // Button/chip background
-    var chipBackground: Color {
-        colorScheme == .dark ? .white.opacity(0.1) : .white.opacity(0.7)
-    }
-    
-    // Button/chip text
-    var chipText: Color {
-        colorScheme == .dark ? .white.opacity(0.7) : Color(red: 0.3, green: 0.3, blue: 0.4)
-    }
-    
-    // Add fee button background
-    var addButtonBackground: Color {
-        colorScheme == .dark ? .blue.opacity(0.2) : .blue.opacity(0.1)
-    }
-    
-    // Divider color
-    var divider: Color {
-        colorScheme == .dark ? .white.opacity(0.2) : .black.opacity(0.1)
-    }
-    
-    // Mode switch selected background
-    var modeSwitchSelected: Color {
-        colorScheme == .dark ? .white.opacity(0.15) : .white.opacity(0.9)
-    }
-    
-    // Mode switch background
-    var modeSwitchBackground: Material {
-        colorScheme == .dark ? .ultraThinMaterial : .regularMaterial
-    }
-    
-    var modeSwitchBackgroundOpacity: Double {
-        colorScheme == .dark ? 0.5 : 0.7
-    }
-    
-    // Mode switch stroke
-    var modeSwitchStroke: Color {
-        colorScheme == .dark ? .white.opacity(0.2) : .white.opacity(0.5)
-    }
-    
-    // Mode switch selected text
-    var modeSwitchSelectedText: Color {
-        colorScheme == .dark ? .white : Color(red: 0.15, green: 0.15, blue: 0.2)
-    }
-    
-    // Mode switch unselected text
-    var modeSwitchUnselectedText: Color {
-        colorScheme == .dark ? .white.opacity(0.5) : Color(red: 0.5, green: 0.5, blue: 0.55)
-    }
-    
     // Validation error color
     var validationError: Color {
-        colorScheme == .dark ? .orange : .orange
+        .orange
     }
     
     // Accent color for results
@@ -225,28 +157,29 @@ struct GrossUpView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Fixed header (title only)
-            Text(selectedMode.inputLabel)
-                .font(.system(.largeTitle, weight: .bold))
-                .foregroundColor(theme.primaryText)
-                .animation(.easeInOut(duration: 0.2), value: selectedMode)
-                .padding(.top, 8)
-            
-            // Swipeable calculator content only
-            TabView(selection: $selectedMode) {
-                calcContent(mode: .gross)
-                    .tag(CalcMode.gross)
+        GlassEffectContainer {
+            ZStack(alignment: .top) {
+                // Swipeable calculator content (fees and results only)
+                VStack(spacing: 0) {
+                    TabView(selection: $selectedMode) {
+                        calcContent(mode: .gross)
+                            .tag(CalcMode.gross)
+                        
+                        calcContent(mode: .net)
+                            .tag(CalcMode.net)
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    
+                    // Bottom bar with buttons and toggle
+                    bottomBar
+                        .padding(.bottom, 8)
+                }
                 
-                calcContent(mode: .net)
-                    .tag(CalcMode.net)
+                // Fixed glass input card at top (content scrolls behind)
+                inputCard(mode: selectedMode)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            
-            // Bottom bar with buttons and toggle
-            bottomBar
-                .padding(.horizontal, 12)
-                .padding(.bottom, 8)
         }
         .background {
             LinearGradient(
@@ -259,46 +192,60 @@ struct GrossUpView: View {
         .preferredColorScheme(colorSchemeOverride)
     }
     
-    // MARK: - Bottom Bar
+    // MARK: - Bottom Bar (matches iOS 26 Liquid Glass tab bar sizing)
     private var bottomBar: some View {
-        HStack(spacing: 0) {
-            // Left section - theme toggle centered
+        HStack(spacing: 12) {
+            // Left section - theme toggle with native Liquid Glass circular button
             Button(action: { toggleColorScheme() }) {
                 Image(systemName: effectiveColorScheme == .dark ? "sun.max.fill" : "moon.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(theme.secondaryText)
-                    .frame(width: 44, height: 44)
-                    .background(theme.glassBackground.opacity(theme.glassBackgroundOpacity))
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle()
-                            .stroke(theme.glassStroke, lineWidth: 1)
-                    )
-                    .shadow(color: theme.glassShadowColor, radius: 4, x: 0, y: 2)
+                    .font(.system(size: 18, weight: .medium))
             }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity)
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .controlSize(.large)
             
-            // Mode switch (fixed width)
+            // Mode switch (center) - native segmented control with glass
             modeSwitch
+                .fixedSize()
             
-            // Right section - clear button centered
+            // Right section - clear button with native Liquid Glass circular button
             Button(action: { clearCalculator(mode: selectedMode) }) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(theme.secondaryText)
-                    .frame(width: 44, height: 44)
-                    .background(theme.glassBackground.opacity(theme.glassBackgroundOpacity))
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle()
-                            .stroke(theme.glassStroke, lineWidth: 1)
-                    )
-                    .shadow(color: theme.glassShadowColor, radius: 4, x: 0, y: 2)
+                Text("C")
+                    .font(.system(size: 20, weight: .semibold))
             }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity)
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .controlSize(.large)
         }
+        .padding(.vertical, 16)
+    }
+    
+    // MARK: - Input Card (fixed at top)
+    @ViewBuilder
+    private func inputCard(mode: CalcMode) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(mode.inputLabel)
+                .font(.headline)
+                .foregroundStyle(theme.secondaryText)
+            
+            CurrencyTextField(
+                digits: mode == .gross ? $grossModeDigits : $netModeDigits,
+                placeholder: "$0.00",
+                colorScheme: effectiveColorScheme
+            )
+            .frame(height: 44)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20)
+        .background {
+            RoundedRectangle(cornerRadius: 24)
+                .fill(.regularMaterial)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(.blue.opacity(0.02))
+                }
+        }
+        .glassEffect(in: .rect(cornerRadius: 24))
     }
     
     // MARK: - Calc Content (swipeable)
@@ -306,27 +253,16 @@ struct GrossUpView: View {
     private func calcContent(mode: CalcMode) -> some View {
         ScrollView {
             VStack(spacing: 12) {
-                VStack(spacing: 16) {
-                    CurrencyTextField(
-                        digits: mode == .gross ? $grossModeDigits : $netModeDigits,
-                        placeholder: "$0.00",
-                        colorScheme: effectiveColorScheme
-                    )
-                    .frame(height: 44)
-                }
-                .frame(maxWidth: .infinity)
-                .adaptiveGlassCard(theme: theme)
-
                 feesSection
-                    .adaptiveGlassCard(theme: theme)
 
                 resultsSection(mode: mode)
-                    .adaptiveGlassCard(theme: theme)
             }
             .padding(.horizontal, 12)
+            .padding(.top, 130) // Space for fixed input card above
             .padding(.bottom, 80)
         }
         .scrollIndicators(.hidden)
+        .scrollEdgeEffectStyle(.soft, for: .top) // Maintains legibility under fixed input card
     }
     
     // MARK: - Fees Section
@@ -335,26 +271,34 @@ struct GrossUpView: View {
             HStack {
                 Text("Taxes and fees")
                     .font(.headline)
-                    .foregroundColor(theme.secondaryText)
+                    .foregroundStyle(theme.secondaryText)
                 Spacer()
             }
             
-            // Fee Presets
+            // Fee Presets and Add Fee button - inline horizontal row with native Liquid Glass
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
+                    // Circular Add Fee button with native glass (blue tint)
+                    Button(action: addFee) {
+                        Image(systemName: "plus")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
+                    .controlSize(.regular)
+                    .tint(.blue)
+                    
+                    // Fee preset chips with native glass capsule style
                     ForEach(feePresets) { preset in
                         Button(action: { addPreset(preset) }) {
                             Text("\(preset.name) \(preset.percent)%")
-                                .font(.caption)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(theme.chipBackground)
-                                .cornerRadius(16)
+                                .font(.subheadline)
                         }
-                        .buttonStyle(.plain)
-                        .foregroundColor(theme.chipText)
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.capsule)
                     }
                 }
+                .padding(.vertical, 4)
             }
 
             // Fee rows
@@ -364,7 +308,7 @@ struct GrossUpView: View {
                         TextField("Fee name", text: $fee.name)
                             .textFieldStyle(.plain)
                             .font(.body)
-                            .foregroundColor(theme.primaryText)
+                            .foregroundStyle(theme.primaryText)
 
                         HStack(spacing: 4) {
                             TextField("0", text: $fee.percentText)
@@ -372,47 +316,41 @@ struct GrossUpView: View {
                                 .multilineTextAlignment(.trailing)
                                 .frame(width: 50)
                                 .font(.system(.body, weight: .semibold))
-                                .foregroundColor(theme.primaryText)
+                                .foregroundStyle(theme.primaryText)
                             Text("%")
-                                .foregroundColor(theme.mutedText)
+                                .foregroundStyle(theme.mutedText)
                         }
                         
                         Button(action: { removeFee(fee) }) {
-                            Image(systemName: "minus.circle.fill")
-                                .foregroundColor(theme.veryMutedText)
-                                .font(.system(size: 20))
+                            Image(systemName: "minus")
+                                .font(.system(size: 14, weight: .semibold))
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .controlSize(.small)
+                        .tint(.blue)
                     }
                     .padding(.vertical, 12)
+                    .padding(.trailing, 8) // Room for glass effect expansion
                 }
             }
-
-            // Add Fee button
-            Button(action: addFee) {
-                HStack {
-                    Image(systemName: "plus.circle.fill")
-                    Text("Add Fee")
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(theme.addButtonBackground)
-                .cornerRadius(12)
-            }
-            .buttonStyle(.plain)
-            .foregroundColor(.blue)
             
-            // Inline validation
+            // Inline validation - orange tinted glass for visibility
             if let error = calculationResult.validationError {
                 HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.circle.fill")
+                    Image(systemName: "exclamationmark.triangle.fill")
                         .font(.caption)
                     Text(error)
-                        .font(.caption)
+                        .font(.caption.weight(.medium))
                 }
-                .foregroundColor(theme.validationError)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .glassEffect(.regular.tint(.orange), in: .capsule)
             }
         }
+        .padding(20)
+        .glassEffect(in: .rect(cornerRadius: 24))
     }
     
     // MARK: - Results Section
@@ -423,12 +361,12 @@ struct GrossUpView: View {
                 HStack {
                     Text("You keep \(formatPercent(100 - calculationResult.totalDeductions))")
                         .font(.subheadline)
-                        .foregroundColor(theme.tertiaryText)
+                        .foregroundStyle(theme.tertiaryText)
                     Text("•")
-                        .foregroundColor(theme.veryMutedText)
+                        .foregroundStyle(theme.veryMutedText)
                     Text("Fees \(formatPercent(calculationResult.totalDeductions))")
                         .font(.subheadline)
-                        .foregroundColor(theme.tertiaryText)
+                        .foregroundStyle(theme.tertiaryText)
                     Spacer()
                 }
             }
@@ -436,80 +374,45 @@ struct GrossUpView: View {
             HStack {
                 Text("Total Deductions")
                     .font(.subheadline)
-                    .foregroundColor(theme.tertiaryText)
+                    .foregroundStyle(theme.tertiaryText)
                 Spacer()
                 Text(calculationResult.isValid ? formatPercent(calculationResult.totalDeductions) : "—")
                     .font(.system(.title3, weight: .semibold))
-                    .foregroundColor(theme.primaryText)
+                    .foregroundStyle(theme.primaryText)
             }
 
             Divider()
-                .background(theme.divider)
 
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(mode.outputLabel)
                         .font(.headline)
-                        .foregroundColor(theme.tertiaryText)
+                        .foregroundStyle(theme.tertiaryText)
                     Text(calculationResult.resultText)
                         .font(.system(size: 44, weight: .bold))
-                        .foregroundColor(theme.accentColor)
+                        .foregroundStyle(theme.accentColor)
                         .minimumScaleFactor(0.6)
                         .lineLimit(1)
                 }
                 Spacer()
             }
         }
+        .padding(20)
+        .glassEffect(in: .rect(cornerRadius: 24))
     }
     
-    // MARK: - Mode Switch
+    // MARK: - Mode Switch (native Liquid Glass segmented control)
     private var modeSwitch: some View {
-        let padding: CGFloat = 3
-        let totalWidth: CGFloat = 160
-        let totalHeight: CGFloat = 44
-        let segmentWidth = (totalWidth - padding * 2) / 2
-        let indicatorHeight = totalHeight - padding * 2
-        
-        return ZStack {
-            // Sliding indicator
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(theme.modeSwitchSelected)
-                .frame(width: segmentWidth, height: indicatorHeight)
-                .offset(x: selectedMode == .gross ? -segmentWidth / 2 : segmentWidth / 2)
-                .animation(.easeInOut(duration: 0.25), value: selectedMode)
-            
-            // Buttons
-            HStack(spacing: 0) {
-                ForEach(CalcMode.allCases, id: \.rawValue) { mode in
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            selectedMode = mode
-                        }
-                    }) {
-                        HStack(spacing: 5) {
-                            Image(systemName: mode.iconName)
-                                .font(.system(size: 12, weight: .medium))
-                            Text(mode.displayName)
-                                .font(.system(size: 14, weight: .semibold))
-                        }
-                        .foregroundColor(selectedMode == mode ? theme.modeSwitchSelectedText : theme.modeSwitchUnselectedText)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: indicatorHeight)
-                        .animation(.easeInOut(duration: 0.15), value: selectedMode)
-                    }
-                    .buttonStyle(.plain)
-                }
+        Picker("Mode", selection: $selectedMode) {
+            ForEach(CalcMode.allCases, id: \.rawValue) { mode in
+                Label(mode.displayName, systemImage: mode.iconName)
+                    .tag(mode)
             }
-            .padding(padding)
         }
-        .frame(width: totalWidth, height: totalHeight)
-        .background(theme.modeSwitchBackground.opacity(theme.modeSwitchBackgroundOpacity))
-        .clipShape(RoundedRectangle(cornerRadius: 21, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 21, style: .continuous)
-                .stroke(theme.modeSwitchStroke, lineWidth: 1)
-        )
-        .shadow(color: theme.glassShadowColor.opacity(0.15), radius: 6, x: 0, y: 2)
+        .pickerStyle(.segmented)
+        .controlSize(.large)
+        .labelsHidden()
+        .glassEffect(.regular.interactive(), in: .capsule)
     }
 
     // MARK: - Calculation
@@ -620,51 +523,6 @@ struct CalculationResult {
     let totalDeductions: Double
     let isValid: Bool
     let validationError: String?
-}
-
-struct DarkGlassCard: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(20)
-            .background(.ultraThinMaterial.opacity(0.5))
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 5)
-            .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
-            )
-    }
-}
-
-struct AdaptiveGlassCard: ViewModifier {
-    let theme: AppTheme
-    
-    func body(content: Content) -> some View {
-        content
-            .padding(20)
-            .background(theme.glassBackground.opacity(theme.glassBackgroundOpacity))
-            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .shadow(color: theme.glassShadowColor, radius: 15, x: 0, y: 5)
-            .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(theme.glassStroke, lineWidth: 1)
-            )
-    }
-}
-
-extension View {
-    func darkGlassCard() -> some View {
-        modifier(DarkGlassCard())
-    }
-    
-    // Keep old modifier for compatibility
-    func glassCard() -> some View {
-        modifier(DarkGlassCard())
-    }
-    
-    func adaptiveGlassCard(theme: AppTheme) -> some View {
-        modifier(AdaptiveGlassCard(theme: theme))
-    }
 }
 
 struct FeeItem: Identifiable {
