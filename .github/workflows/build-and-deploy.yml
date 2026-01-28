@@ -5,6 +5,12 @@ on:
     tags:
       - 'v*'  # Trigger on version tags like v1.0.0
   workflow_dispatch:  # Allow manual trigger
+    inputs:
+      submit_for_review:
+        description: 'Submit for App Store review after upload'
+        required: false
+        default: 'false'
+        type: boolean
 
 jobs:
   build-and-upload:
@@ -84,6 +90,83 @@ jobs:
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: GrossUp-${{ github.ref_name }}
           path: build/Export/GrossUp.ipa
+          if-no-files-found: ignore
+
+      - name: Wait for build processing
+        if: inputs.submit_for_review == true || inputs.submit_for_review == 'true'
+        run: |
+          echo "Waiting 5 minutes for App Store Connect to process the build..."
+          sleep 300
+
+      - name: Generate AI release notes
+        if: inputs.submit_for_review == true || inputs.submit_for_review == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          # Get commits since last tag
+          VERSION=${GITHUB_REF_NAME#v}
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
+          if [ -n "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --oneline "$PREVIOUS_TAG..HEAD")
+          else
+            COMMITS=$(git log --oneline -10)
+          fi
+          
+          echo "Commits for release notes:"
+          echo "$COMMITS"
+          
+          # Generate release notes with AI
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "Generating release notes with Claude..."
+            NOTES=$(curl -s https://api.anthropic.com/v1/messages \
+              -H "Content-Type: application/json" \
+              -H "x-api-key: $ANTHROPIC_API_KEY" \
+              -H "anthropic-version: 2023-06-01" \
+              -d "{
+                \"model\": \"claude-sonnet-4-20250514\",
+                \"max_tokens\": 500,
+                \"messages\": [{
+                  \"role\": \"user\",
+                  \"content\": \"Generate concise App Store release notes (max 3 bullet points) for these commits. Focus on user-facing changes only:\\n\\n$COMMITS\"
+                }]
+              }" | jq -r '.content[0].text')
+          elif [ -n "$OPENAI_API_KEY" ]; then
+            echo "Generating release notes with OpenAI..."
+            NOTES=$(curl -s https://api.openai.com/v1/chat/completions \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer $OPENAI_API_KEY" \
+              -d "{
+                \"model\": \"gpt-4o\",
+                \"messages\": [{
+                  \"role\": \"user\",
+                  \"content\": \"Generate concise App Store release notes (max 3 bullet points) for these commits. Focus on user-facing changes only:\\n\\n$COMMITS\"
+                }],
+                \"max_tokens\": 500
+              }" | jq -r '.choices[0].message.content')
+          else
+            NOTES="Bug fixes and performance improvements."
+          fi
+          
+          echo "Generated release notes:"
+          echo "$NOTES"
+          echo "$NOTES" > /tmp/release_notes.txt
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          echo "$NOTES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Submit for App Store review
+        if: inputs.submit_for_review == true || inputs.submit_for_review == 'true'
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_PATH: ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8
+        run: |
+          chmod +x ./scripts/submit-for-review.sh
+          VERSION=${GITHUB_REF_NAME#v}
+          ./scripts/submit-for-review.sh "$VERSION"
