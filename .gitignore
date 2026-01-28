@@ -20,3 +20,9 @@ Pods/
 
 # Cursor
 .cursor/
+
+# Environment variables (contains secrets)
+.env
+
+# App Store Connect API Keys (secrets)
+AuthKey_*.p8
