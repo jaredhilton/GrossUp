@@ -25,6 +25,21 @@ jobs:
           gem install xcpretty
           brew install xcodegen
 
+      - name: Set version from tag
+        run: |
+          # Extract version from tag (v1.2.3 -> 1.2.3)
+          VERSION=${GITHUB_REF_NAME#v}
+          # Build number from run number
+          BUILD_NUMBER=${{ github.run_number }}
+          
+          echo "Setting version to $VERSION (build $BUILD_NUMBER)"
+          
+          # Update project.yml with version from tag
+          sed -i '' "s/MARKETING_VERSION: .*/MARKETING_VERSION: $VERSION/" project.yml
+          sed -i '' "s/CURRENT_PROJECT_VERSION: .*/CURRENT_PROJECT_VERSION: $BUILD_NUMBER/" project.yml
+          
+          cat project.yml | grep -E "MARKETING_VERSION|CURRENT_PROJECT_VERSION"
+
       - name: Generate Xcode project
         run: xcodegen generate
 
