@@ -59,3 +59,48 @@
   - Net income calculation
   - Validation bounds (invalid deductions, zero/negative amounts)
 - Tests may require Xcode project wiring; document any module name changes.
+
+## CI/CD & Deployment
+
+### Local Build & Upload
+```bash
+# Build only (no upload)
+./scripts/build-and-upload.sh --skip-upload
+
+# Build and upload to App Store Connect
+./scripts/build-and-upload.sh
+```
+
+**Configuration:** Copy `.env.example` to `.env` and fill in your App Store Connect API credentials.
+
+### GitHub Actions (Automated)
+The workflow in `.github/workflows/build-and-deploy.yml` automatically builds and uploads to App Store Connect when you push a version tag.
+
+**To release a new version:**
+```bash
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+**Versioning:**
+- **Marketing Version**: Extracted from git tag (`v1.2.0` → `1.2.0`)
+- **Build Number**: Auto-increments using GitHub Actions run number
+
+**Required GitHub Secrets:**
+| Secret | Description |
+|--------|-------------|
+| `APP_STORE_CONNECT_API_KEY_ID` | API Key ID from App Store Connect |
+| `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID from App Store Connect |
+| `APP_STORE_CONNECT_API_KEY_BASE64` | Base64-encoded `.p8` key file |
+
+**To get API credentials:**
+1. Go to [App Store Connect](https://appstoreconnect.apple.com) → Users and Access → Integrations → App Store Connect API
+2. Generate or use existing API key
+3. Note the Key ID and Issuer ID
+4. Download the `.p8` file and base64 encode it: `base64 -i AuthKey_XXXX.p8 | pbcopy`
+
+### Project Configuration
+- **Bundle ID**: `com.jaredhilton.GrossUp`
+- **Team ID**: `S863LZ43ZG`
+- **Deployment Target**: iOS 26.0
+- **Code Signing**: Automatic (managed via App Store Connect API key)

@@ -57,14 +57,31 @@ Help users compute either the gross income required to achieve a desired net amo
 - Display inline validation messages (not modal alerts).
 
 ## Acceptance Criteria
-- App builds on iOS 17+ with no external dependencies.
-- Swipeable dual-mode layout with adaptive glassmorphic styling.
+- App builds on iOS 26+ with no external dependencies.
+- Swipeable dual-mode layout with iOS 26 Liquid Glass design.
 - Automatically follows system appearance (Light/Dark mode).
 - Bottom mode switch syncs with swipe gestures.
 - Calculation and validation behave correctly for typical inputs in both modes.
 - Results update in real-time without a Calculate button.
-- Light mode features Apple-inspired frosted glass aesthetic with soft gradients.
-- Dark mode retains the original dark glass aesthetic.
+- Native Liquid Glass buttons with proper `controlSize` for embossed appearance.
+- Fixed input card at top with glass effect; content scrolls behind it.
+
+## Deployment
+- **App Store Connect**: Automated via GitHub Actions on version tags
+- **Bundle ID**: `com.jaredhilton.GrossUp`
+- **Current Version**: 1.1.0
+
+### Release Process
+```bash
+# Tag and push to trigger deployment
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+The GitHub Actions workflow will:
+1. Extract version from tag
+2. Build and sign the app
+3. Upload to App Store Connect for TestFlight/App Store review
 
 ## Manual Test Script
 
